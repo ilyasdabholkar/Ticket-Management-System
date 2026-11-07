@@ -1,0 +1,106 @@
+import { useDraggable } from '@dnd-kit/core'
+import { TICKET_CATEGORY_META, formatEffort } from '@tms/shared'
+import { Clock, Lock } from 'lucide-react'
+import { forwardRef, type HTMLAttributes } from 'react'
+import { Link } from 'react-router'
+import { PriorityBadge } from '@/components/shared/ticket-badges'
+import { UserAvatar } from '@/components/shared/user-avatar'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import type { TicketListItem } from '@/features/tickets/api'
+import { timeAgo } from '@/lib/dates'
+import { cn } from '@/lib/utils'
+
+interface CardBodyProps extends HTMLAttributes<HTMLDivElement> {
+  ticket: TicketListItem
+  effortMinutes?: number
+  dragging?: boolean
+  overlay?: boolean
+}
+
+/** Visual card, shared by the draggable card and the drag overlay. */
+export const TicketCardBody = forwardRef<HTMLDivElement, CardBodyProps>(function TicketCardBody(
+  { ticket, effortMinutes, dragging, overlay, className, ...rest },
+  ref,
+) {
+  const locked = ticket.status === 'prod_deployed'
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'bg-card group rounded-lg border p-3 text-left shadow-xs transition-shadow',
+        !locked && 'cursor-grab active:cursor-grabbing hover:shadow-md',
+        dragging && 'opacity-40',
+        overlay && 'rotate-1 shadow-lg ring-primary/30 ring-2',
+        className,
+      )}
+      {...rest}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          to={`/tickets/${ticket.ticket_number}`}
+          className="text-muted-foreground hover:text-foreground font-mono text-xs font-medium hover:underline"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {ticket.ticket_number}
+        </Link>
+        <span className="text-muted-foreground flex items-center gap-1 text-[0.7rem]">
+          {locked && <Lock className="size-3" aria-label="Locked" />}
+          {TICKET_CATEGORY_META[ticket.category].prefix}
+        </span>
+      </div>
+      <p className="mt-1.5 line-clamp-2 text-sm font-medium">{ticket.title}</p>
+      {ticket.application && <p className="text-muted-foreground mt-1 truncate text-xs">{ticket.application.name}</p>}
+      <div className="mt-2.5 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <PriorityBadge priority={ticket.priority} />
+          {!!effortMinutes && (
+            <span className="text-muted-foreground flex items-center gap-0.5 text-[0.7rem] tabular-nums" title="Total logged effort">
+              <Clock className="size-3" aria-hidden />
+              {formatEffort(effortMinutes)}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-[0.7rem]" title={new Date(ticket.updated_at).toLocaleString()}>
+            {timeAgo(ticket.updated_at)}
+          </span>
+          {ticket.assignee ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <UserAvatar name={ticket.assignee.full_name} className="size-6 text-[0.6rem]" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{ticket.assignee.full_name}</TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className="text-muted-foreground border-muted-foreground/40 flex size-6 items-center justify-center rounded-full border border-dashed text-[0.6rem]" title="Unassigned">
+              ?
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+})
+
+export function DraggableTicketCard({ ticket, effortMinutes }: { ticket: TicketListItem; effortMinutes?: number }) {
+  const locked = ticket.status === 'prod_deployed'
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: ticket.id,
+    data: { ticket },
+    disabled: locked,
+  })
+  return (
+    <TicketCardBody
+      ref={setNodeRef}
+      ticket={ticket}
+      effortMinutes={effortMinutes}
+      dragging={isDragging}
+      aria-label={`${ticket.ticket_number}: ${ticket.title}`}
+      {...attributes}
+      {...listeners}
+      aria-roledescription={locked ? 'Locked ticket' : 'Draggable ticket'}
+    />
+  )
+}

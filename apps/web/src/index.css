@@ -1,0 +1,189 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Geist Variable', sans-serif;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    --chart-bar: #2a78d6; /* dataviz: validated single hue (light) */
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.546 0.215 262.9);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.623 0.188 259.8);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.546 0.215 262.9);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+    --chart-bar: #3987e5; /* dataviz: validated single hue (dark) */
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.623 0.188 259.8);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
+}
+/* ---------------------------------------------------------------------------
+   Rich text (Tiptap) – shared by editor and viewer
+   --------------------------------------------------------------------------- */
+@layer components {
+  .rich-text {
+    @apply text-sm leading-relaxed break-words;
+  }
+  .rich-text > * + * { @apply mt-3; }
+  .rich-text h1 { @apply text-xl font-semibold; }
+  .rich-text h2 { @apply text-lg font-semibold; }
+  .rich-text h3 { @apply text-base font-semibold; }
+  .rich-text ul { @apply list-disc pl-6; }
+  .rich-text ol { @apply list-decimal pl-6; }
+  .rich-text li > p { @apply my-0; }
+  .rich-text a { @apply text-primary underline underline-offset-2; }
+  .rich-text blockquote { @apply border-l-4 border-border pl-4 text-muted-foreground; }
+  .rich-text code { @apply rounded bg-muted px-1 py-0.5 font-mono text-[0.85em]; }
+  .rich-text pre { @apply overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs; }
+  .rich-text pre code { @apply bg-transparent p-0; }
+  .rich-text img { @apply max-w-full rounded-md border; }
+  .rich-text img.ProseMirror-selectednode { @apply ring-2 ring-ring; }
+  .rich-text table { @apply w-full border-collapse text-sm; }
+  .rich-text .tableWrapper { @apply overflow-x-auto; }
+  .rich-text th, .rich-text td { @apply border border-border px-2 py-1 align-top; }
+  .rich-text th { @apply bg-muted font-medium; }
+  .rich-text .selectedCell { @apply bg-primary/10; }
+  .rich-text p.is-editor-empty:first-child::before {
+    @apply pointer-events-none float-left h-0 text-muted-foreground;
+    content: attr(data-placeholder);
+  }
+}
+
+/* Action buttons: colored, animated (AI summary / AI email / log effort). White text on 700-step fills keeps >= 4.5:1. */
+@layer components {
+  .btn-action {
+    @apply relative isolate overflow-hidden border-0 text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:text-white hover:shadow-md active:translate-y-0 active:scale-[0.97];
+  }
+  .btn-action::after {
+    content: '';
+    @apply pointer-events-none absolute inset-y-0 -left-full w-1/2 -skew-x-12 bg-gradient-to-r from-transparent via-white/35 to-transparent;
+  }
+  .btn-action:hover::after { animation: btn-shine 0.8s ease-out; }
+  .btn-ai-summary { @apply bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 hover:shadow-violet-500/30; }
+  .btn-ai-email { @apply bg-gradient-to-r from-sky-700 to-cyan-700 hover:from-sky-600 hover:to-cyan-600 hover:shadow-sky-500/30; }
+  .btn-effort { @apply bg-gradient-to-r from-emerald-700 to-green-700 hover:from-emerald-600 hover:to-green-600 hover:shadow-emerald-500/30; }
+  .btn-ai-summary svg { animation: btn-twinkle 2.4s ease-in-out infinite; }
+  .btn-ai-email:hover svg { animation: btn-wiggle 0.5s ease-in-out; }
+  .btn-effort svg { @apply transition-transform duration-300; }
+  .btn-effort:hover svg { @apply rotate-90; }
+}
+@keyframes btn-shine { to { left: 150%; } }
+@keyframes btn-twinkle { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.2) rotate(12deg); } }
+@keyframes btn-wiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .btn-action, .btn-action svg { animation: none !important; transition: none !important; transform: none !important; }
+  .btn-action:hover::after { animation: none; }
+}

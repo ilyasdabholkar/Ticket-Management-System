@@ -1,0 +1,10 @@
+{
+  "name": "@tms/shared",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "zod": "^4.1.0" },
+  "devDependencies": { "typescript": "~7.0.2" }
+}
