@@ -248,3 +248,4 @@ None.
 
 ## Phase 10: delivered
 - 180/180 checks across 9 verification scripts (one script fixed so it ignores real data). Advisors reviewed (no actionable findings). Phone-width pass on all routes. Vendor chunk splitting in `apps/web/vite.config.ts` (also moved to `import.meta.dirname` for Vite's native config loader). Details in TESTING.md.
+- **Hosting (2026-11-07):** Cloudflare Pages supported alongside IIS: `apps/web/public/_redirects` (SPA fallback) and `_headers` (security headers, immutable `/assets/*`, no-cache `index.html`). Setup steps in README.

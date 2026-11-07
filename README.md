@@ -13,7 +13,7 @@ React 19 + Vite + TypeScript · Bun workspaces · ShadCN UI + Tailwind v4 · Sup
 apps/web          React SPA
 packages/shared   Shared constants, enums and effort helpers (@tms/shared)
 supabase/         migrations/, functions/ (Edge Functions), seed.sql, verification/
-deploy/iis/       IIS web.config
+deploy/iis/       IIS web.config (Cloudflare Pages uses apps/web/public/_redirects + _headers)
 ```
 
 ## Getting started
@@ -29,7 +29,32 @@ Never put the Supabase service-role key in `apps/web` or in any `VITE_*` variabl
 ## First-time setup: initial admin
 1. In Supabase, go to Authentication → Sign In / Providers. Keep **Email enabled** and turn **off** "Allow new users to sign up".
 2. The initial admin already exists (the one-off provisioning script has been removed). Further users are created in the app under Users.
-4. Sign in and create employees under Users.
+3. Sign in and create employees under Users.
+
+## Deploying to Cloudflare Pages (free hosting)
+1. Cloudflare Dashboard → Workers & Pages → Create → Pages → **Connect to Git**, then pick this repository.
+2. Build settings:
+
+   | Setting | Value |
+   |---|---|
+   | Framework preset | None |
+   | Build command | `bun install --frozen-lockfile && bun run build` |
+   | Build output directory | `apps/web/dist` |
+   | Root directory | *(leave empty: repo root)* |
+
+3. Environment variables (set for Production **and** Preview):
+
+   | Name | Value |
+   |---|---|
+   | `VITE_SUPABASE_URL` | `https://<project-ref>.supabase.co` |
+   | `VITE_SUPABASE_PUBLISHABLE_KEY` | the publishable key (safe for browsers) |
+   | `VITE_BASE_PATH` | `/` |
+   | `BUN_VERSION` | `1.3.14` (the Bun version used locally) |
+
+   **Never** add `SUPABASE_SERVICE_ROLE_KEY`, `INITIAL_ADMIN_*` or `LLM_*` here. `VITE_*` values end up in public JavaScript; the LLM key lives only in Supabase Edge Function secrets.
+4. `apps/web/public/_redirects` sends every route to `index.html`, so deep links and page refreshes work. `apps/web/public/_headers` adds security headers, long-term caching for hashed `/assets/*` and `no-cache` for `index.html`.
+5. After the first deploy, go to Supabase → Authentication → URL Configuration. Set **Site URL** to `https://<name>.pages.dev` (or your custom domain) and add it to **Redirect URLs**.
+6. Every push to `main` deploys to production; other branches get preview URLs.
 
 ## Deploying to IIS (local)
 1. Install the [IIS URL Rewrite module](https://www.iis.net/downloads/microsoft/url-rewrite).

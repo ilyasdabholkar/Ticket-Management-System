@@ -1,0 +1,3 @@
+# Cloudflare Pages: serve the SPA for every route (client-side routing).
+# Real files (assets, favicon) are served first; everything else falls back to index.html.
+/*    /index.html   200
