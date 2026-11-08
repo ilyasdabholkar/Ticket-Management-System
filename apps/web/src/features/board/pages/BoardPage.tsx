@@ -228,19 +228,18 @@ function BoardView({ filters, set, clear, hasFilters, profileId, isEmployee }: B
               {TICKET_PRIORITIES.map((p) => <SelectItem key={p} value={p}>{TICKET_PRIORITY_LABELS[p]}</SelectItem>)}
             </SelectContent>
           </Select>
-          {hasFilters && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearchInput(''); clear() }}>
-              <X /> Clear
-            </Button>
-          )}
-        </div>
-        <div className="xl:ml-auto">
+          {/* Same row as the filters: it controls the board view, like they do */}
           <ColumnVisibilityMenu
             visible={visible}
             counts={Object.fromEntries(TICKET_STATUSES.map((s) => [s, columns[s].length])) as Record<TicketStatus, number>}
             onToggle={toggle}
             onShowAll={showAll}
           />
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={() => { setSearchInput(''); clear() }}>
+              <X /> Clear
+            </Button>
+          )}
         </div>
       </div>
 
