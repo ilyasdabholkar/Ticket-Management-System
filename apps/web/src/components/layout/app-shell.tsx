@@ -11,7 +11,8 @@ export function AppShell() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      {/* min-w-0 lets the content column shrink, so wide children (the board) scroll inside it instead of widening the page. */}
+      <SidebarInset className="min-w-0">
         <Topbar />
         <div className="flex-1 overflow-x-hidden p-4 md:p-6">
           <AnimatePresence mode="wait" initial={false}>
@@ -21,7 +22,8 @@ export function AppShell() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="mx-auto w-full max-w-7xl"
+              // The Board needs the full width for its six status columns; other pages keep a readable max width.
+              className={location.pathname === '/board' ? 'w-full' : 'mx-auto w-full max-w-7xl'}
             >
               <Suspense fallback={<PageSkeleton />}>
                 <Outlet />

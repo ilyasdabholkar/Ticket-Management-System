@@ -2,7 +2,7 @@
 
 ## Principles
 - Security is enforced in Postgres (RLS, grants, triggers, definer functions) and in Storage policies, never only in the UI.
-- The browser only has the **publishable key**. The service-role key exists only in Edge Function secrets (provided automatically by Supabase) and in the local, git-ignored root `.env` (no `VITE_` prefix, so Vite never bundles it; checked by searching the build output).
+- The browser only has the **publishable key**. The service-role key exists only in Edge Function secrets (provided automatically by Supabase) and nowhere else: it is not kept in the repo or in the local `.env` (removed 2026-11-07; the root `.env` holds only `VITE_*` values and a local record of the `LLM_*` secrets).
 - No credentials in code, migrations, `seed.sql` or git. `.env*` files are git-ignored, except `.env.example`. The repo has one env file: root `.env`.
 - Roles come from the database (`profiles.roles`: admin and/or employee), never from client input.
 

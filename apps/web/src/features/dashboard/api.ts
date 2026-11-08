@@ -8,8 +8,11 @@ export interface DashboardStats {
     development: number
     support: number
     rnd: number
+    analysis: number
+    issue: number
+    bug_fix: number
     unassigned: number
-    by_status: { development: number; in_progress: number; qa_deployed: number; prod_deployed: number }
+    by_status: { development: number; in_progress: number; qa_deployed: number; prod_deployed: number; completed: number; dropped: number }
   }
   effort_this_month: number
   effort_in_range: number

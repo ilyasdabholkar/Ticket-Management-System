@@ -1,6 +1,7 @@
 import {
   TICKET_CATEGORY_META,
   TICKET_PRIORITIES,
+  isFinalStatus,
   TICKET_PRIORITY_LABELS,
   TICKET_STATUSES,
   TICKET_STATUS_LABELS,
@@ -27,11 +28,13 @@ import type { CorrectionChanges, Ticket } from '../api'
 import { useAdminCorrectTicket } from '../hooks'
 import { ApplicationPicker, AssigneePicker } from './pickers'
 
-type DateKey = 'started_on' | 'qa_deployed_on' | 'prod_deployed_on'
+type DateKey = 'started_on' | 'qa_deployed_on' | 'prod_deployed_on' | 'completed_on' | 'dropped_on'
 const DATE_FIELDS: { key: DateKey; label: string }[] = [
   { key: 'started_on', label: 'Started on' },
   { key: 'qa_deployed_on', label: 'QA deployed on' },
   { key: 'prod_deployed_on', label: 'Prod deployed on' },
+  { key: 'completed_on', label: 'Completed on' },
+  { key: 'dropped_on', label: 'Dropped on' },
 ]
 
 /** ISO (UTC) -> value for <input type="datetime-local"> in local time, and back. */
@@ -63,6 +66,8 @@ export function AdminCorrectionDialog({ ticket, open, onOpenChange }: Props) {
     started_on: toLocalInput(ticket.started_on),
     qa_deployed_on: toLocalInput(ticket.qa_deployed_on),
     prod_deployed_on: toLocalInput(ticket.prod_deployed_on),
+    completed_on: toLocalInput(ticket.completed_on),
+    dropped_on: toLocalInput(ticket.dropped_on),
   })
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -78,6 +83,8 @@ export function AdminCorrectionDialog({ ticket, open, onOpenChange }: Props) {
       started_on: toLocalInput(ticket.started_on),
       qa_deployed_on: toLocalInput(ticket.qa_deployed_on),
       prod_deployed_on: toLocalInput(ticket.prod_deployed_on),
+      completed_on: toLocalInput(ticket.completed_on),
+      dropped_on: toLocalInput(ticket.dropped_on),
     })
     setReason('')
     setError(null)
@@ -156,10 +163,10 @@ export function AdminCorrectionDialog({ ticket, open, onOpenChange }: Props) {
               />
             </Field>
           </div>
-          {status !== ticket.status && ticket.status === 'prod_deployed' && (
+          {status !== ticket.status && isFinalStatus(ticket.status) && !isFinalStatus(status) && (
             <Alert>
               <AlertDescription>
-                Moving the ticket out of Prod Deployed unlocks it. Clear “Prod deployed on” if the deployment did not happen.
+                Reopening the ticket unlocks it. Clear the matching “… on” date below if that step did not really happen.
               </AlertDescription>
             </Alert>
           )}

@@ -11,7 +11,7 @@ export type TicketAttachment = Tables<'ticket_attachments'>
 export type ActivityLog = Tables<'activity_logs'>
 
 const LIST_COLUMNS =
-  'id, ticket_number, title, category, priority, status, application_id, assigned_to, created_by, created_at, updated_at, deleted_at, ' +
+  'id, ticket_number, title, category, priority, status, board_month, application_id, assigned_to, created_by, created_at, updated_at, deleted_at, ' +
   'application:applications(id, name, icon_key), assignee:profiles!tickets_assigned_to_fkey(id, full_name)'
 
 export interface TicketListItem
@@ -23,6 +23,7 @@ export interface TicketListItem
     | 'category'
     | 'priority'
     | 'status'
+    | 'board_month'
     | 'application_id'
     | 'assigned_to'
     | 'created_by'
@@ -44,6 +45,8 @@ export interface TicketFilters {
   assignee?: string
   priority?: TicketPriority
   status?: TicketStatus
+  /** Board month (YYYY-MM-01). Omit for all months. */
+  boardMonth?: string
   /** Admin only: show soft-deleted tickets instead of live ones. */
   deleted?: boolean
   sort?: TicketSort
@@ -64,6 +67,7 @@ export async function listTickets(f: TicketFilters): Promise<{ rows: TicketListI
   if (f.applicationId) q = q.eq('application_id', f.applicationId)
   if (f.priority) q = q.eq('priority', f.priority)
   if (f.status) q = q.eq('status', f.status)
+  if (f.boardMonth) q = q.eq('board_month', f.boardMonth)
   if (f.assignee === 'unassigned') q = q.is('assigned_to', null)
   else if (f.assignee) q = q.eq('assigned_to', f.assignee)
   const term = f.search ? sanitizeSearch(f.search) : ''
@@ -121,6 +125,8 @@ export interface TicketInput {
   description: Json | null
   priority: TicketPriority
   assigned_to: string | null
+  /** Board month (YYYY-MM-01); defaults to the current month on the server. */
+  board_month?: string
 }
 
 export async function createTicket(input: TicketInput): Promise<Pick<Ticket, 'id' | 'ticket_number'>> {
@@ -141,6 +147,13 @@ export async function updateTicket(id: string, patch: TicketPatch): Promise<void
   const { data, error } = await supabase.from('tickets').update(patch).eq('id', id).select('id')
   if (error) throw error
   if (!data?.length) throw new Error('The ticket could not be updated. It may be locked or deleted.')
+}
+
+/** Moves a ticket to another monthly board (unlocked tickets only; audited as 'board_changed'). */
+export async function moveTicketBoard(id: string, boardMonth: string): Promise<void> {
+  const { data, error } = await supabase.from('tickets').update({ board_month: boardMonth }).eq('id', id).select('id')
+  if (error) throw error
+  if (!data?.length) throw new Error('The ticket could not be moved. Finished (locked) tickets cannot change board.')
 }
 
 export async function changeTicketCategory(id: string, category: TicketCategory, applicationId: string | null) {
@@ -218,8 +231,12 @@ export async function listTicketActivity(ticketId: string): Promise<ActivityLog[
 // ---------------------------------------------------------------------------
 export type StatusHistoryEntry = Tables<'ticket_status_history'>
 
-export async function transitionTicketStatus(id: string, status: TicketStatus): Promise<Ticket> {
-  const { data, error } = await supabase.rpc('transition_ticket_status', { p_ticket_id: id, p_status: status })
+export async function transitionTicketStatus(id: string, status: TicketStatus, reason?: string): Promise<Ticket> {
+  const { data, error } = await supabase.rpc('transition_ticket_status', {
+    p_ticket_id: id,
+    p_status: status,
+    ...(reason?.trim() ? { p_reason: reason.trim() } : {}),
+  })
   if (error) throw error
   return data
 }
@@ -233,6 +250,10 @@ export interface CorrectionChanges {
   started_on?: string | null
   qa_deployed_on?: string | null
   prod_deployed_on?: string | null
+  completed_on?: string | null
+  dropped_on?: string | null
+  drop_reason?: string | null
+  board_month?: string
 }
 
 export async function adminCorrectTicket(id: string, changes: CorrectionChanges, reason: string): Promise<Ticket> {
@@ -259,6 +280,8 @@ export async function listStatusHistory(ticketId: string): Promise<StatusHistory
 // Board (Phase 5)
 // ---------------------------------------------------------------------------
 export interface BoardFilters {
+  /** The monthly board to show (YYYY-MM-01). */
+  boardMonth: string
   search?: string
   category?: TicketCategory
   applicationId?: string
@@ -266,26 +289,19 @@ export interface BoardFilters {
   priority?: TicketPriority
 }
 
-/** Prod Deployed is unbounded over time, so the board shows only the most recent deployments. */
-export const BOARD_PROD_LIMIT = 30
+/** Safety cap for one monthly board. */
+export const BOARD_LIMIT = 1000
 
 export async function listBoardTickets(f: BoardFilters): Promise<TicketListItem[]> {
-  const build = () => {
-    let q = supabase.from('tickets').select(LIST_COLUMNS).is('deleted_at', null)
-    if (f.category) q = q.eq('category', f.category)
-    if (f.applicationId) q = q.eq('application_id', f.applicationId)
-    if (f.priority) q = q.eq('priority', f.priority)
-    if (f.assignee === 'unassigned') q = q.is('assigned_to', null)
-    else if (f.assignee) q = q.eq('assigned_to', f.assignee)
-    const term = f.search ? sanitizeSearch(f.search) : ''
-    if (term) q = q.or(`ticket_number.ilike.%${term}%,title.ilike.%${term}%`)
-    return q
-  }
-  const [open, prod] = await Promise.all([
-    build().neq('status', 'prod_deployed').order('updated_at', { ascending: false }).limit(1000),
-    build().eq('status', 'prod_deployed').order('prod_deployed_on', { ascending: false }).limit(BOARD_PROD_LIMIT),
-  ])
-  if (open.error) throw open.error
-  if (prod.error) throw prod.error
-  return [...(open.data ?? []), ...(prod.data ?? [])] as unknown as TicketListItem[]
+  let q = supabase.from('tickets').select(LIST_COLUMNS).is('deleted_at', null).eq('board_month', f.boardMonth)
+  if (f.category) q = q.eq('category', f.category)
+  if (f.applicationId) q = q.eq('application_id', f.applicationId)
+  if (f.priority) q = q.eq('priority', f.priority)
+  if (f.assignee === 'unassigned') q = q.is('assigned_to', null)
+  else if (f.assignee) q = q.eq('assigned_to', f.assignee)
+  const term = f.search ? sanitizeSearch(f.search) : ''
+  if (term) q = q.or(`ticket_number.ilike.%${term}%,title.ilike.%${term}%`)
+  const { data, error } = await q.order('updated_at', { ascending: false }).limit(BOARD_LIMIT)
+  if (error) throw error
+  return (data ?? []) as unknown as TicketListItem[]
 }

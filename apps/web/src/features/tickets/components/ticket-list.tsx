@@ -5,12 +5,14 @@ import {
   TICKET_PRIORITY_LABELS,
   TICKET_STATUSES,
   TICKET_STATUS_LABELS,
+  formatBoardMonth,
   formatEffort,
+  isFinalStatus,
   type TicketCategory,
   type TicketPriority,
   type TicketStatus,
 } from '@tms/shared'
-import { ChevronLeft, ChevronRight, ListTodo, RotateCcw, Search, X } from 'lucide-react'
+import { ArrowRightLeft, ChevronLeft, ChevronRight, ListTodo, RotateCcw, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { EmptyState, ErrorState, TableSkeleton } from '@/components/common/states'
@@ -30,7 +32,8 @@ import { useEffortTotals } from '@/features/effort-logs/hooks'
 import { useUsers } from '@/features/users/hooks'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { timeAgo } from '@/lib/dates'
-import { PAGE_SIZE, type TicketFilters, type TicketSort } from '../api'
+import { PAGE_SIZE, type TicketFilters, type TicketListItem, type TicketSort } from '../api'
+import { boardMonthOptions, MoveBoardDialog } from './board-month'
 import { useRestoreTicket, useTickets } from '../hooks'
 
 const ALL = '__all__'
@@ -44,6 +47,7 @@ function useFilterParams(fixedApplicationId?: string) {
     assignee: params.get('assignee') || undefined,
     priority: (params.get('priority') as TicketPriority) || undefined,
     status: (params.get('status') as TicketStatus) || undefined,
+    boardMonth: params.get('month') || undefined,
     deleted: params.get('deleted') === '1' || undefined,
     sort: (params.get('sort') as TicketSort) || 'updated',
     page: Number(params.get('page') ?? '1') || 1,
@@ -65,7 +69,7 @@ function useFilterParams(fixedApplicationId?: string) {
       if (prev.get('tab')) next.set('tab', prev.get('tab')!)
       return next
     }, { replace: true })
-  return { filters, set, clear, hasFilters: ['q', 'category', 'app', 'assignee', 'priority', 'status', 'deleted'].some((k) => params.has(k)) }
+  return { filters, set, clear, hasFilters: ['q', 'category', 'app', 'assignee', 'priority', 'status', 'month', 'deleted'].some((k) => params.has(k)) }
 }
 
 interface TicketListProps {
@@ -81,6 +85,7 @@ export function TicketList({ applicationId, onCreate }: TicketListProps) {
   const { data: apps } = useApplications()
   const { data: users } = useUsers()
   const restore = useRestoreTicket()
+  const [moving, setMoving] = useState<TicketListItem | null>(null)
 
   const [searchInput, setSearchInput] = useState(filters.search ?? '')
   const debounced = useDebouncedValue(searchInput)
@@ -170,6 +175,17 @@ export function TicketList({ applicationId, onCreate }: TicketListProps) {
               ))}
             </SelectContent>
           </Select>
+          <Select value={filters.boardMonth ?? ALL} onValueChange={(v) => set('month', v)}>
+            <SelectTrigger className="w-full md:w-40" aria-label="Board">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All boards</SelectItem>
+              {boardMonthOptions(filters.boardMonth).map((m) => (
+                <SelectItem key={m} value={m}>{formatBoardMonth(m)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={filters.sort ?? 'updated'} onValueChange={(v) => set('sort', v === 'updated' ? undefined : v)}>
             <SelectTrigger className="w-full md:w-44" aria-label="Sort">
               <SelectValue />
@@ -223,10 +239,11 @@ export function TicketList({ applicationId, onCreate }: TicketListProps) {
                 {!applicationId && <TableHead className="hidden lg:table-cell">Application</TableHead>}
                 <TableHead className="hidden md:table-cell">Priority</TableHead>
                 <TableHead className="hidden sm:table-cell">Status</TableHead>
+                <TableHead className="hidden md:table-cell">Board</TableHead>
                 <TableHead className="hidden md:table-cell">Assignee</TableHead>
                 <TableHead className="hidden text-right lg:table-cell">Effort</TableHead>
                 <TableHead className="hidden xl:table-cell">Updated</TableHead>
-                {filters.deleted && <TableHead className="w-24"><span className="sr-only">Restore</span></TableHead>}
+                <TableHead className="w-12"><span className="sr-only">{filters.deleted ? 'Restore' : 'Actions'}</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -269,6 +286,7 @@ export function TicketList({ applicationId, onCreate }: TicketListProps) {
                   )}
                   <TableCell className="hidden md:table-cell"><PriorityBadge priority={t.priority} /></TableCell>
                   <TableCell className="hidden sm:table-cell"><StatusBadge status={t.status} /></TableCell>
+                  <TableCell className="hidden whitespace-nowrap text-sm md:table-cell">{formatBoardMonth(t.board_month)}</TableCell>
                   <TableCell className="hidden md:table-cell">
                     {t.assignee ? (
                       <span className="flex items-center gap-2">
@@ -285,7 +303,7 @@ export function TicketList({ applicationId, onCreate }: TicketListProps) {
                   <TableCell className="text-muted-foreground hidden text-xs xl:table-cell" title={new Date(t.updated_at).toLocaleString()}>
                     {timeAgo(t.updated_at)}
                   </TableCell>
-                  {filters.deleted && (
+                  {filters.deleted ? (
                     <TableCell>
                       <Button
                         size="sm"
@@ -299,6 +317,23 @@ export function TicketList({ applicationId, onCreate }: TicketListProps) {
                         <RotateCcw /> Restore
                       </Button>
                     </TableCell>
+                  ) : (
+                    <TableCell className="text-right">
+                      {!isFinalStatus(t.status) && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Move ${t.ticket_number} to another board`}
+                          title="Move to another board"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setMoving(t)
+                          }}
+                        >
+                          <ArrowRightLeft />
+                        </Button>
+                      )}
+                    </TableCell>
                   )}
                 </TableRow>
               ))}
@@ -306,6 +341,8 @@ export function TicketList({ applicationId, onCreate }: TicketListProps) {
           </Table>
         </Card>
       )}
+
+      <MoveBoardDialog ticket={moving} onOpenChange={(o) => !o && setMoving(null)} />
 
       {data && data.total > 0 && (
         <div className="text-muted-foreground flex items-center justify-between text-sm">

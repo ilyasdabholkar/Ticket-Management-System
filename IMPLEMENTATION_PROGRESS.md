@@ -203,6 +203,8 @@ See `TECHNICAL_ANALYSIS.md` §11 for the main decisions. Implementation-level on
 | 20261107094517 | multi_roles | — |
 | 20261107120514 | reports | 8 |
 | 20261107122228 | dashboard | 9 |
+| 20261108070924 | ticket_statuses_completed_dropped | 11 |
+| 20261108071052 | monthly_boards_final_statuses | 11 |
 
 ## Known issues
 - Fixed in Phase 10: vendor chunking (entry 190 kB). Remaining large chunks are lazy (PDF renderer ~1.2 MB, editor 470 kB), so Vite still prints a size warning for them.
@@ -249,3 +251,28 @@ None.
 ## Phase 10: delivered
 - 180/180 checks across 9 verification scripts (one script fixed so it ignores real data). Advisors reviewed (no actionable findings). Phone-width pass on all routes. Vendor chunk splitting in `apps/web/vite.config.ts` (also moved to `import.meta.dirname` for Vite's native config loader). Details in TESTING.md.
 - **Hosting (2026-11-07):** Cloudflare Pages supported alongside IIS: `apps/web/public/_redirects` (SPA fallback) and `_headers` (security headers, immutable `/assets/*`, no-cache `index.html`). Setup steps in README.
+
+## Phase 11: Completed / Dropped statuses and monthly boards (2026-11-08): delivered, awaiting review
+- **User decisions:**
+  - Add Completed and Dropped.
+  - Dropped takes an optional reason.
+  - Every month has its own board; unfinished tickets stay on their board unless a user moves them.
+  - A paginated, searchable table view is available.
+  - Users can move tickets between boards.
+- **Defaults chosen (stated to the user):**
+  - Completed is reachable from In Progress or QA Deployed.
+  - Dropped is reachable from any open status.
+  - Both are final and lock the ticket like Prod Deployed; admin correction can reopen them.
+  - New tickets go on the current IST month, or on the board being viewed when created from the Board page.
+  - Existing tickets were put on the board of the month they were created in.
+  - Finished tickets cannot change board.
+- **UI:**
+  - Board page: month picker (‹ Nov-2026 ›, "This month"), Board/Table toggle, 6 columns (Completed teal, Dropped slate with a strike-through badge). Dropping a card on a final column opens a confirmation; Dropped has a reason box.
+  - The ticket page status menu groups the finish options.
+  - Ticket page: Board row with a Move button, Completed/Dropped dates and drop reason, and a lock banner that names the actual final status.
+  - Tickets list: Board filter ("All boards"), Board column, per-row Move action.
+  - Dashboard: Completed and Dropped tiles.
+  - The activity timeline shows board moves and drop reasons.
+- **Verification:** see TESTING.md (Phase 11). A browser check is pending because the dev server was stopped for low memory.
+- **Board column visibility (2026-11-08):** "Columns" menu on the Board with a checkbox per status (shows per-column counts; at least one stays visible; "Show all columns"). Saved per browser in localStorage (`tms.board.visibleColumns`) and applies to every month. Also: Board page uses the full width, the sidebar is 13.5rem, `SidebarInset` has `min-w-0`, so only the columns scroll sideways.
+- **New categories (2026-11-08):** Analysis (ANL), Issue (ISS), Bug Fix (BUG), all requiring an application (user decision). Category icons: chart, alert circle, bug. The dashboard is regrouped: status row (hero total, In Progress, QA, Prod, Completed, Dropped, Unassigned), a "By category" row of 6, then effort.

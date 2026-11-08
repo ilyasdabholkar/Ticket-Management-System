@@ -1,5 +1,5 @@
-import { TICKET_STATUS_LABELS, formatEffort } from '@tms/shared'
-import { Clock, Code2, FlaskConical, Hourglass, LifeBuoy, ListTodo, Rocket, TestTube, UserX } from 'lucide-react'
+import { TICKET_CATEGORY_META, TICKET_STATUS_LABELS, formatEffort } from '@tms/shared'
+import { Ban, Bug, ChartNoAxesColumn, CircleAlert, CircleCheckBig, Clock, Code2, FlaskConical, Hourglass, LifeBuoy, ListTodo, Rocket, TestTube, UserX } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { ErrorState } from '@/components/common/states'
@@ -163,19 +163,34 @@ export function Component() {
         <ErrorState error={error} onRetry={() => void refetch()} />
       ) : (
         <>
+          {/* Status: hero total + current status of tickets created in the period */}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile hero label="Total tickets" value={t?.total ?? 0} hint="Created in this period" icon={ListTodo} loading={loading} className="sm:col-span-2 xl:col-span-1 xl:row-span-2 xl:justify-center" />
-            <StatTile label="Development" value={t?.development ?? 0} icon={Code2} tone="indigo" loading={loading} />
-            <StatTile label="Support" value={t?.support ?? 0} icon={LifeBuoy} tone="teal" loading={loading} />
-            <StatTile label="R&D" value={t?.rnd ?? 0} icon={FlaskConical} tone="amber" loading={loading} />
             <StatTile label={TICKET_STATUS_LABELS.in_progress} value={t?.by_status.in_progress ?? 0} icon={Hourglass} tone="blue" loading={loading} />
             <StatTile label={TICKET_STATUS_LABELS.qa_deployed} value={t?.by_status.qa_deployed ?? 0} icon={TestTube} tone="violet" loading={loading} />
             <StatTile label={TICKET_STATUS_LABELS.prod_deployed} value={t?.by_status.prod_deployed ?? 0} icon={Rocket} tone="emerald" loading={loading} />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-3">
+            <StatTile label={TICKET_STATUS_LABELS.completed} value={t?.by_status.completed ?? 0} hint="Finished without a release" icon={CircleCheckBig} tone="teal" loading={loading} />
+            <StatTile label={TICKET_STATUS_LABELS.dropped} value={t?.by_status.dropped ?? 0} hint="Cancelled" icon={Ban} tone="slate" loading={loading} />
             <StatTile label="Unassigned" value={t?.unassigned ?? 0} hint="Created in this period, no assignee" icon={UserX} tone="rose" loading={loading} />
-            <StatTile label={own ? 'My effort this month' : 'Total effort this month'} value={formatEffort(stats?.effort_this_month ?? 0)} hint="Calendar month to date" icon={Clock} tone="cyan" loading={loading} />
-            <StatTile label={own ? 'My effort in period' : 'Team effort in period'} value={formatEffort(stats?.effort_in_range ?? 0)} hint={rangeLabel} icon={Clock} tone="sky" loading={loading} />
+          </div>
+
+          {/* Category */}
+          <section aria-labelledby="by-category" className="space-y-2">
+            <h2 id="by-category" className="text-muted-foreground text-xs font-medium tracking-wide uppercase">By category</h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
+              <StatTile label={TICKET_CATEGORY_META.development.label} value={t?.development ?? 0} icon={Code2} tone="indigo" loading={loading} />
+              <StatTile label={TICKET_CATEGORY_META.support.label} value={t?.support ?? 0} icon={LifeBuoy} tone="fuchsia" loading={loading} />
+              <StatTile label={TICKET_CATEGORY_META.rnd.label} value={t?.rnd ?? 0} icon={FlaskConical} tone="amber" loading={loading} />
+              <StatTile label={TICKET_CATEGORY_META.analysis.label} value={t?.analysis ?? 0} icon={ChartNoAxesColumn} tone="cyan" loading={loading} />
+              <StatTile label={TICKET_CATEGORY_META.issue.label} value={t?.issue ?? 0} icon={CircleAlert} tone="rose" loading={loading} />
+              <StatTile label={TICKET_CATEGORY_META.bug_fix.label} value={t?.bug_fix ?? 0} icon={Bug} tone="violet" loading={loading} />
+            </div>
+          </section>
+
+          {/* Effort */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <StatTile label={own ? 'My effort this month' : 'Total effort this month'} value={formatEffort(stats?.effort_this_month ?? 0)} hint="Calendar month to date" icon={Clock} tone="sky" loading={loading} />
+            <StatTile label={own ? 'My effort in period' : 'Team effort in period'} value={formatEffort(stats?.effort_in_range ?? 0)} hint={rangeLabel} icon={Clock} tone="blue" loading={loading} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">

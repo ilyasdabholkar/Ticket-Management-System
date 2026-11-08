@@ -26,9 +26,11 @@ interface CreateTicketSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   defaultApplicationId?: string
+  /** Board month (YYYY-MM-01) for the new ticket; the server defaults to the current month. */
+  defaultBoardMonth?: string
 }
 
-export function CreateTicketSheet({ open, onOpenChange, defaultApplicationId }: CreateTicketSheetProps) {
+export function CreateTicketSheet({ open, onOpenChange, defaultApplicationId, defaultBoardMonth }: CreateTicketSheetProps) {
   const { profile, isEmployee } = useAuth()
   const navigate = useNavigate()
   const create = useCreateTicket()
@@ -65,7 +67,7 @@ export function CreateTicketSheet({ open, onOpenChange, defaultApplicationId }: 
   const needsApp = TICKET_CATEGORY_META[category].requiresApplication
 
   const onSubmit = form.handleSubmit(async (v) => {
-    const created = await create.mutateAsync({ ...v, description: v.description as Json | null })
+    const created = await create.mutateAsync({ ...v, description: v.description as Json | null, ...(defaultBoardMonth ? { board_month: defaultBoardMonth } : {}) })
     onOpenChange(false)
     navigate(`/tickets/${created.ticket_number}`)
   })

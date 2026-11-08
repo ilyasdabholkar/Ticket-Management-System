@@ -1,5 +1,5 @@
 import { useDraggable } from '@dnd-kit/core'
-import { TICKET_CATEGORY_META, formatEffort } from '@tms/shared'
+import { TICKET_CATEGORY_META, formatEffort, isFinalStatus } from '@tms/shared'
 import { Clock, Lock } from 'lucide-react'
 import { forwardRef, type HTMLAttributes } from 'react'
 import { Link } from 'react-router'
@@ -22,7 +22,7 @@ export const TicketCardBody = forwardRef<HTMLDivElement, CardBodyProps>(function
   { ticket, effortMinutes, dragging, overlay, className, ...rest },
   ref,
 ) {
-  const locked = ticket.status === 'prod_deployed'
+  const locked = isFinalStatus(ticket.status)
   return (
     <div
       ref={ref}
@@ -50,7 +50,7 @@ export const TicketCardBody = forwardRef<HTMLDivElement, CardBodyProps>(function
       </div>
       <p className="mt-1.5 line-clamp-2 text-sm font-medium">{ticket.title}</p>
       {ticket.application && <p className="text-muted-foreground mt-1 truncate text-xs">{ticket.application.name}</p>}
-      <div className="mt-2.5 flex items-center justify-between gap-2">
+      <div className="mt-2.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
         <div className="flex items-center gap-1.5">
           <PriorityBadge priority={ticket.priority} />
           {!!effortMinutes && (
@@ -60,8 +60,8 @@ export const TicketCardBody = forwardRef<HTMLDivElement, CardBodyProps>(function
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-[0.7rem]" title={new Date(ticket.updated_at).toLocaleString()}>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-muted-foreground text-[0.7rem] whitespace-nowrap" title={new Date(ticket.updated_at).toLocaleString()}>
             {timeAgo(ticket.updated_at)}
           </span>
           {ticket.assignee ? (
@@ -85,7 +85,7 @@ export const TicketCardBody = forwardRef<HTMLDivElement, CardBodyProps>(function
 })
 
 export function DraggableTicketCard({ ticket, effortMinutes }: { ticket: TicketListItem; effortMinutes?: number }) {
-  const locked = ticket.status === 'prod_deployed'
+  const locked = isFinalStatus(ticket.status)
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: ticket.id,
     data: { ticket },

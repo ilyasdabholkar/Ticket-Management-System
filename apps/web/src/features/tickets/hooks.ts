@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { TICKET_STATUS_LABELS, type TicketCategory, type TicketStatus } from '@tms/shared'
+import { TICKET_STATUS_LABELS, formatBoardMonth, type TicketCategory, type TicketStatus } from '@tms/shared'
 import { toast } from 'sonner'
 import { errorMessage } from '@/lib/errors'
 import {
@@ -17,6 +17,7 @@ import {
   listTicketActivity,
   listTicketAliases,
   listTickets,
+  moveTicketBoard,
   removeAttachment,
   restoreTicket,
   softDeleteTicket,
@@ -159,7 +160,7 @@ export const useStatusHistory = (id: string | undefined) =>
 export function useTransitionStatus(boardFilters?: BoardFilters) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (v: { id: string; status: TicketStatus; ticketNumber: string }) => transitionTicketStatus(v.id, v.status),
+    mutationFn: (v: { id: string; status: TicketStatus; ticketNumber: string; reason?: string }) => transitionTicketStatus(v.id, v.status, v.reason),
     onMutate: async (v) => {
       if (!boardFilters) return undefined
       const key = boardKey(boardFilters)
@@ -176,6 +177,19 @@ export function useTransitionStatus(boardFilters?: BoardFilters) {
     },
     onSuccess: (_t, v) => toast.success(`${v.ticketNumber} moved to ${TICKET_STATUS_LABELS[v.status]}`),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ticketKeys.all }),
+  })
+}
+
+/** Moves a ticket to another monthly board (unlocked tickets only). */
+export function useMoveTicketBoard() {
+  const invalidate = useInvalidateTickets()
+  return useMutation({
+    mutationFn: (v: { id: string; boardMonth: string; ticketNumber: string }) => moveTicketBoard(v.id, v.boardMonth),
+    onSuccess: (_d, v) => {
+      toast.success(`${v.ticketNumber} moved to the ${formatBoardMonth(v.boardMonth)} board`)
+      void invalidate()
+    },
+    onError: (e) => toast.error(errorMessage(e)),
   })
 }
 

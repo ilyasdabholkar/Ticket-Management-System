@@ -1,17 +1,7 @@
-import { TICKET_STATUSES, TICKET_STATUS_LABELS, canTransition, type TicketStatus } from '@tms/shared'
+import { TICKET_STATUSES, TICKET_STATUS_LABELS, canTransition, isFinalStatus, type TicketStatus } from '@tms/shared'
 import { ChevronDown, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { StatusBadge } from '@/components/shared/ticket-badges'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -23,14 +13,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import type { Ticket } from '../api'
 import { useTransitionStatus } from '../hooks'
+import { FinishTicketDialog, type FinalStatus } from './finish-ticket-dialog'
 
-/** Status dropdown that only offers allowed transitions; Prod Deployed asks for confirmation. */
+/** Status dropdown that only offers allowed transitions; final statuses ask for confirmation (Dropped: optional reason). */
 export function StatusControl({ ticket, disabled }: { ticket: Ticket; disabled?: boolean }) {
   const transition = useTransitionStatus()
-  const [confirm, setConfirm] = useState(false)
+  const [finishing, setFinishing] = useState<FinalStatus | null>(null)
   const options = TICKET_STATUSES.filter((s) => canTransition(ticket.status, s))
+  const open = options.filter((s) => !isFinalStatus(s))
+  const final = options.filter((s) => isFinalStatus(s))
 
-  const go = (to: TicketStatus) => transition.mutate({ id: ticket.id, status: to, ticketNumber: ticket.ticket_number })
+  const go = (to: TicketStatus, reason?: string) =>
+    transition.mutate({ id: ticket.id, status: to, ticketNumber: ticket.ticket_number, reason })
 
   if (disabled || options.length === 0) return <StatusBadge status={ticket.status} />
 
@@ -46,28 +40,34 @@ export function StatusControl({ ticket, disabled }: { ticket: Ticket; disabled?:
         <DropdownMenuContent align="start">
           <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">Move to</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {options.map((s) => (
-            <DropdownMenuItem key={s} onSelect={() => (s === 'prod_deployed' ? setConfirm(true) : go(s))}>
+          {open.map((s) => (
+            <DropdownMenuItem key={s} onSelect={() => go(s)}>
               {TICKET_STATUS_LABELS[s]}
             </DropdownMenuItem>
           ))}
+          {final.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">Finish (locks the ticket)</DropdownMenuLabel>
+              {final.map((s) => (
+                <DropdownMenuItem key={s} variant={s === 'dropped' ? 'destructive' : 'default'} onSelect={() => setFinishing(s as FinalStatus)}>
+                  {TICKET_STATUS_LABELS[s]}
+                </DropdownMenuItem>
+              ))}
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AlertDialog open={confirm} onOpenChange={setConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Move {ticket.ticket_number} to Prod Deployed?</AlertDialogTitle>
-            <AlertDialogDescription>
-              The ticket will be <strong>locked</strong> and cannot be moved back. Only an administrator can make an audited correction.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => go('prod_deployed')}>Deploy and lock</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <FinishTicketDialog
+        ticketNumber={finishing ? ticket.ticket_number : null}
+        status={finishing}
+        onCancel={() => setFinishing(null)}
+        onConfirm={(reason) => {
+          if (finishing) go(finishing, reason)
+          setFinishing(null)
+        }}
+      />
     </>
   )
 }

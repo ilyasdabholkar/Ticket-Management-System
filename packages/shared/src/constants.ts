@@ -3,7 +3,7 @@
 export const USER_ROLES = ['admin', 'employee'] as const
 export type UserRole = (typeof USER_ROLES)[number]
 
-export const TICKET_CATEGORIES = ['development', 'support', 'rnd'] as const
+export const TICKET_CATEGORIES = ['development', 'support', 'rnd', 'analysis', 'issue', 'bug_fix'] as const
 export type TicketCategory = (typeof TICKET_CATEGORIES)[number]
 
 export const TICKET_CATEGORY_META: Record<
@@ -13,9 +13,17 @@ export const TICKET_CATEGORY_META: Record<
   development: { label: 'Development', prefix: 'DEV', requiresApplication: true },
   support: { label: 'Support', prefix: 'SUP', requiresApplication: true },
   rnd: { label: 'R&D', prefix: 'RND', requiresApplication: false },
+  analysis: { label: 'Analysis', prefix: 'ANL', requiresApplication: true },
+  issue: { label: 'Issue', prefix: 'ISS', requiresApplication: true },
+  bug_fix: { label: 'Bug Fix', prefix: 'BUG', requiresApplication: true },
 }
 
-export const TICKET_STATUSES = ['development', 'in_progress', 'qa_deployed', 'prod_deployed'] as const
+export const TICKET_STATUSES = ['development', 'in_progress', 'qa_deployed', 'prod_deployed', 'completed', 'dropped'] as const
+
+/** Final statuses lock the ticket (mirrors private.is_final_status). */
+export const FINAL_TICKET_STATUSES = ['prod_deployed', 'completed', 'dropped'] as const
+export const isFinalStatus = (s: TicketStatus) => (FINAL_TICKET_STATUSES as readonly string[]).includes(s)
+export const DROP_REASON_MAX = 500
 export type TicketStatus = (typeof TICKET_STATUSES)[number]
 
 export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
@@ -23,6 +31,8 @@ export const TICKET_STATUS_LABELS: Record<TicketStatus, string> = {
   in_progress: 'In Progress',
   qa_deployed: 'QA Deployed',
   prod_deployed: 'Prod Deployed',
+  completed: 'Completed',
+  dropped: 'Dropped',
 }
 
 export const TICKET_PRIORITIES = ['low', 'medium', 'high', 'critical'] as const
@@ -109,14 +119,28 @@ export function formatBytes(bytes: number): string {
 }
 
 /**
- * Workflow rule (decision Q2), mirrored by public.transition_ticket_status():
- * free movement among the first three columns; Prod Deployed only from QA Deployed; Prod is final.
+ * Workflow rules, mirrored by public.transition_ticket_status():
+ * free movement among the open statuses; Prod Deployed only from QA Deployed; Completed from In Progress or
+ * QA Deployed; Dropped from any open status. Final statuses (Prod Deployed, Completed, Dropped) are locked.
  */
 export function canTransition(from: TicketStatus, to: TicketStatus): boolean {
   if (from === to) return false
-  if (from === 'prod_deployed') return false
+  if (isFinalStatus(from)) return false
   if (to === 'prod_deployed') return from === 'qa_deployed'
+  if (to === 'completed') return from === 'in_progress' || from === 'qa_deployed'
   return true
+}
+
+/** Board month helpers. A board is identified by the first day of its month (YYYY-MM-01). */
+export const boardMonthOf = (isoDate: string) => `${isoDate.slice(0, 7)}-01`
+export function shiftBoardMonth(month: string, delta: number): string {
+  const [y, m] = month.split('-').map(Number)
+  const d = new Date(Date.UTC(y, m - 1 + delta, 1))
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`
+}
+export function formatBoardMonth(month: string): string {
+  const [y, m] = month.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }).replace(' ', '-')
 }
 
 /** Today's date (YYYY-MM-DD) in the organisation timezone; mirrors private.org_today(). */

@@ -1,7 +1,7 @@
 import {
   TICKET_CATEGORY_META,
   TICKET_PRIORITY_LABELS,
-  TICKET_STATUS_LABELS,
+  TICKET_STATUS_LABELS, formatBoardMonth,
   formatEffort,
   type TicketCategory,
   type TicketPriority,
@@ -30,7 +30,9 @@ export function describeActivity(log: Pick<ActivityLog, 'action' | 'actor_id' | 
     case 'category_changed':
       return `changed category from ${TICKET_CATEGORY_META[m.from as TicketCategory]?.label ?? m.from} to ${TICKET_CATEGORY_META[m.to as TicketCategory]?.label ?? m.to} (${m.from_number} → ${m.to_number})`
     case 'status_changed':
-      return `moved the ticket from ${TICKET_STATUS_LABELS[m.from as TicketStatus] ?? m.from} to ${TICKET_STATUS_LABELS[m.to as TicketStatus] ?? m.to}`
+      return `moved the ticket from ${TICKET_STATUS_LABELS[m.from as TicketStatus] ?? m.from} to ${TICKET_STATUS_LABELS[m.to as TicketStatus] ?? m.to}${m.reason ? ` (reason: “${String(m.reason)}”)` : ""}`
+    case 'board_changed':
+      return `moved the ticket from the ${formatBoardMonth(String(m.from))} board to ${formatBoardMonth(String(m.to))}`
     case 'attachment_added':
       return `attached ${m.file_name}`
     case 'attachment_removed':

@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 /** Accent per tile. Status tones match StatusBadge (in progress = blue, QA = violet, prod = emerald). */
-export type TileTone = 'blue' | 'indigo' | 'teal' | 'amber' | 'violet' | 'emerald' | 'rose' | 'cyan' | 'sky'
+export type TileTone = 'blue' | 'indigo' | 'teal' | 'amber' | 'violet' | 'emerald' | 'rose' | 'cyan' | 'sky' | 'slate' | 'fuchsia'
 
 const TONES: Record<TileTone, { chip: string; bar: string; glow: string }> = {
   blue: { chip: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300', bar: 'from-blue-500 to-blue-400', glow: 'from-blue-500/10' },
@@ -16,6 +16,8 @@ const TONES: Record<TileTone, { chip: string; bar: string; glow: string }> = {
   emerald: { chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300', bar: 'from-emerald-500 to-emerald-400', glow: 'from-emerald-500/10' },
   rose: { chip: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300', bar: 'from-rose-500 to-rose-400', glow: 'from-rose-500/10' },
   cyan: { chip: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300', bar: 'from-cyan-500 to-cyan-400', glow: 'from-cyan-500/10' },
+  slate: { chip: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300', bar: 'from-slate-400 to-slate-300', glow: 'from-slate-500/10' },
+  fuchsia: { chip: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-950 dark:text-fuchsia-300', bar: 'from-fuchsia-500 to-fuchsia-400', glow: 'from-fuchsia-500/10' },
   sky: { chip: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300', bar: 'from-sky-500 to-sky-400', glow: 'from-sky-500/10' },
 }
 

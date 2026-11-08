@@ -1,3 +1,4 @@
+import type { TicketCategory, TicketStatus } from '@tms/shared'
 import type { Tables } from '@tms/shared'
 import { fileExtension } from '@tms/shared'
 import { supabase } from '@/lib/supabase'
@@ -13,8 +14,8 @@ export interface ReportRow {
   ticket_number: string
   title: string
   application_name: string | null
-  category: 'development' | 'support' | 'rnd'
-  status: 'development' | 'in_progress' | 'qa_deployed' | 'prod_deployed'
+  category: TicketCategory
+  status: TicketStatus
   effort_minutes: number
   started_on: string | null
   qa_deployed_on: string | null

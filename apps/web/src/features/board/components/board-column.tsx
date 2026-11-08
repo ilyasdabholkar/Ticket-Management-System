@@ -1,5 +1,5 @@
 import { useDroppable } from '@dnd-kit/core'
-import { TICKET_STATUS_LABELS, type TicketStatus } from '@tms/shared'
+import { TICKET_STATUS_LABELS, isFinalStatus, type TicketStatus } from '@tms/shared'
 import { Lock } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { TicketListItem } from '@/features/tickets/api'
@@ -11,6 +11,8 @@ const ACCENT: Record<TicketStatus, string> = {
   in_progress: 'bg-blue-500',
   qa_deployed: 'bg-violet-500',
   prod_deployed: 'bg-emerald-500',
+  completed: 'bg-teal-500',
+  dropped: 'bg-slate-400',
 }
 
 interface BoardColumnProps {
@@ -29,7 +31,7 @@ export function BoardColumn({ status, tickets, dropAllowed, footer, effortTotals
     <section
       aria-label={`${TICKET_STATUS_LABELS[status]} column`}
       className={cn(
-        'bg-muted/50 flex w-72 shrink-0 flex-col rounded-xl border transition-colors sm:w-80 lg:w-auto lg:min-w-0 lg:flex-1',
+        'bg-muted/50 flex w-72 shrink-0 flex-col rounded-xl border transition-colors sm:w-80 lg:w-auto lg:min-w-48 lg:flex-1',
         dropAllowed === true && 'border-primary/40 border-dashed',
         dropAllowed === false && 'opacity-60',
         isOver && dropAllowed && 'bg-primary/5 border-primary',
@@ -38,7 +40,7 @@ export function BoardColumn({ status, tickets, dropAllowed, footer, effortTotals
       <header className="flex items-center gap-2 px-3 pt-3 pb-2">
         <span className={cn('size-2 rounded-full', ACCENT[status])} aria-hidden />
         <h2 className="text-xs font-semibold tracking-wide uppercase">{TICKET_STATUS_LABELS[status]}</h2>
-        {status === 'prod_deployed' && <Lock className="text-muted-foreground size-3" aria-label="Locked column" />}
+        {isFinalStatus(status) && <Lock className="text-muted-foreground size-3" aria-label="Locked column" />}
         <span className="text-muted-foreground bg-background ml-auto rounded-full px-2 py-0.5 text-xs tabular-nums">{tickets.length}</span>
       </header>
       <div ref={setNodeRef} className="flex min-h-32 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2 lg:max-h-[calc(100svh-18rem)]">

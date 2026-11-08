@@ -114,3 +114,28 @@ Each phase is verified with:
 | Responsive | Playwright at phone width on all 16 routes | No horizontal page overflow anywhere |
 | Performance (bundle) | `bun run build` | Vendor code split into react / supabase / query / ui / forms chunks; app entry chunk 190 kB (64 kB gzip). Large chunks are lazy only: PDF renderer about 1.2 MB (only when a report is previewed), rich-text editor 470 kB, dashboard charts 368 kB |
 | Console | Playwright log | No app errors. One expected 503 from before the AI secrets were set; one dev-only "multiple GoTrueClient" warning after a hot reload |
+
+## Phase 11: Completed / Dropped and monthly boards (2026-11-08)
+| Check | Result |
+|---|---|
+| `11_final_statuses_boards.sql` (21): board default and normalisation; Completed only from In Progress/QA and then locked (no edits, comments, effort, board move); Dropped with trimmed optional reason, reason rejected on other transitions and over 500 chars, reason in activity, locked against delete; employee moves an open ticket between boards, which is audited; admin correction reopens a dropped ticket and moves its board without a duplicate log; dashboard counts | **21/21** |
+| Regression after the lock-function rewrite: `04_tickets_rls.sql`, `05_workflow.sql` | 32/32, 21/21 |
+| Advisors | No new findings (same intentional definer-function warnings) |
+| typecheck / lint / build | Pass |
+| Browser check (fresh test data: application Test Portal, DEV-0002, RND-0001..0003) | Pass:
+  - Status menu offers Completed only from In Progress or QA.
+  - Completed and Dropped confirmations; Dropped reason box with a 38/500 counter.
+  - Lock banner names the status and shows the reason; Completed/Dropped dates and drop reason on the ticket page.
+  - Activity shows reasons and board moves.
+  - Move to Dec-2026 from the ticket page; month picker shows Nov 3 / Dec 1; moved back from a table row.
+  - Table: columns, search "dark", Board filter, Move button only on open tickets, URL state.
+  - Drag Development → In Progress works; a disallowed column is greyed out and ignores the drop.
+  - Dashboard Completed 1 / Dropped 1 tiles.
+  - 390 px: no page-level horizontal scroll.
+  One fix made: the Board page now uses the full width (it was capped at max-w-7xl, which cut off the 6th column at 1600 px) and the column min-width is now 13 rem |
+
+## New categories (2026-11-08)
+| Check | Result |
+|---|---|
+| `12_new_categories.sql` (9): each new category is rejected without an application, numbered ANL/ISS/BUG; R&D still needs no application; changing R&D to Issue renumbers it; dashboard counts | 9/9 (rolled back, so no numbers were used) |
+| Browser | Create-ticket category list shows all six with prefixes; table Category filter lists them; dashboard "By category" row with 6 tiles | Pass |

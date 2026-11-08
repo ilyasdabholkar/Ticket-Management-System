@@ -2,11 +2,12 @@ import {
   TICKET_CATEGORY_META,
   TICKET_PRIORITY_LABELS,
   TICKET_STATUS_LABELS,
+  isFinalStatus,
   type TicketCategory,
   type TicketPriority,
   type TicketStatus,
 } from '@tms/shared'
-import { ChevronDown, ChevronsUp, ChevronUp, Code2, FlaskConical, Equal, LifeBuoy, Lock } from 'lucide-react'
+import { Bug, ChartNoAxesColumn, ChevronDown, ChevronUp, ChevronsUp, CircleAlert, Code2, Equal, FlaskConical, LifeBuoy, Lock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
@@ -27,7 +28,14 @@ export function PriorityBadge({ priority, className }: { priority: TicketPriorit
   )
 }
 
-const CATEGORY_ICON: Record<TicketCategory, typeof Code2> = { development: Code2, support: LifeBuoy, rnd: FlaskConical }
+const CATEGORY_ICON: Record<TicketCategory, typeof Code2> = {
+  development: Code2,
+  support: LifeBuoy,
+  rnd: FlaskConical,
+  analysis: ChartNoAxesColumn,
+  issue: CircleAlert,
+  bug_fix: Bug,
+}
 
 export function CategoryBadge({ category, className }: { category: TicketCategory; className?: string }) {
   const Icon = CATEGORY_ICON[category]
@@ -44,12 +52,14 @@ const STATUS_STYLE: Record<TicketStatus, string> = {
   in_progress: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-900',
   qa_deployed: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-950 dark:text-violet-300 dark:border-violet-900',
   prod_deployed: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-900',
+  completed: 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-900',
+  dropped: 'bg-slate-100 text-slate-600 border-slate-300 line-through decoration-slate-400/70 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
 }
 
 export function StatusBadge({ status, className }: { status: TicketStatus; className?: string }) {
   return (
     <Badge variant="outline" className={cn('gap-1 font-medium uppercase tracking-wide text-[0.7rem]', STATUS_STYLE[status], className)}>
-      {status === 'prod_deployed' && <Lock className="size-3" aria-label="Locked" />}
+      {isFinalStatus(status) && <Lock className="size-3" aria-label="Locked" />}
       {TICKET_STATUS_LABELS[status]}
     </Badge>
   )

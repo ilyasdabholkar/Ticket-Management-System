@@ -2,11 +2,14 @@ import {
   TICKET_CATEGORY_META,
   TICKET_PRIORITIES,
   TICKET_PRIORITY_LABELS,
+  TICKET_STATUS_LABELS,
+  formatBoardMonth,
+  isFinalStatus,
   type Json,
   type TicketPriority,
 } from '@tms/shared'
 import type { JSONContent } from '@tiptap/react'
-import { ArrowLeft, Check, Copy, Loader2, Lock, Pencil, RotateCcw, SearchX, ShieldAlert, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRightLeft, Check, Copy, Loader2, Lock, Pencil, RotateCcw, SearchX, ShieldAlert, Trash2 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { toast } from 'sonner'
@@ -43,6 +46,7 @@ import { ATTACHMENT_BUCKET, type Ticket } from '../api'
 import { ActivityTimeline } from '../components/activity-timeline'
 import { AdminCorrectionDialog } from '../components/admin-correction-dialog'
 import { StatusControl } from '../components/status-control'
+import { MoveBoardDialog } from '../components/board-month'
 import { StatusHistoryCard } from '../components/status-history'
 import { AttachmentsPanel } from '../components/attachments-panel'
 import { ChangeCategoryDialog } from '../components/change-category-dialog'
@@ -184,6 +188,7 @@ export function Component() {
   const [categoryOpen, setCategoryOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [correctionOpen, setCorrectionOpen] = useState(false)
+  const [movingBoard, setMovingBoard] = useState(false)
 
   if (isPending) return <DetailSkeleton />
   if (isError) return <ErrorState error={error} onRetry={() => void refetch()} />
@@ -199,7 +204,7 @@ export function Component() {
     )
   }
 
-  const locked = ticket.status === 'prod_deployed'
+  const locked = isFinalStatus(ticket.status)
   const deleted = !!ticket.deleted_at
   const readOnly = locked || deleted
   const canDelete = !readOnly && (ticket.created_by === profile?.id || isAdmin)
@@ -240,7 +245,10 @@ export function Component() {
           <Lock />
           <AlertTitle>This ticket is locked</AlertTitle>
           <AlertDescription>
-            It reached Prod Deployed on {formatDateTime(ticket.prod_deployed_on)}. Details, attachments, comments and effort can no longer be changed.{isAdmin && ' Use Admin correction to fix mistakes.'}
+            It was marked {TICKET_STATUS_LABELS[ticket.status]} on{' '}
+            {formatDateTime(ticket.status === 'prod_deployed' ? ticket.prod_deployed_on : ticket.status === 'completed' ? ticket.completed_on : ticket.dropped_on)}.
+            {ticket.status === 'dropped' && ticket.drop_reason ? ` Reason: “${ticket.drop_reason}”.` : ''} Details, attachments, comments, effort and board can no longer be
+            changed.{isAdmin && ' Use Admin correction to fix mistakes or reopen it.'}
           </AlertDescription>
         </Alert>
       )}
@@ -280,6 +288,16 @@ export function Component() {
             <CardContent className="space-y-3">
               <Property label="Status">
                 <StatusControl ticket={ticket} disabled={readOnly} />
+              </Property>
+              <Property label="Board">
+                <span className="flex items-center gap-1">
+                  <span className="text-sm font-medium">{formatBoardMonth(ticket.board_month)}</span>
+                  {!readOnly && (
+                    <Button variant="ghost" size="icon-sm" aria-label="Move to another board" title="Move to another board" onClick={() => setMovingBoard(true)}>
+                      <ArrowRightLeft />
+                    </Button>
+                  )}
+                </span>
               </Property>
               <Property label="Category">
                 <div className="flex items-center gap-2">
@@ -324,6 +342,13 @@ export function Component() {
               <Property label="Started">{formatDateTime(ticket.started_on)}</Property>
               <Property label="QA deployed">{formatDateTime(ticket.qa_deployed_on)}</Property>
               <Property label="Prod deployed">{formatDateTime(ticket.prod_deployed_on)}</Property>
+              {ticket.completed_on && <Property label="Completed">{formatDateTime(ticket.completed_on)}</Property>}
+              {ticket.dropped_on && <Property label="Dropped">{formatDateTime(ticket.dropped_on)}</Property>}
+              {ticket.drop_reason && (
+                <Property label="Drop reason">
+                  <span className="text-sm break-words">{ticket.drop_reason}</span>
+                </Property>
+              )}
               {aliases && aliases.length > 0 && (
                 <>
                   <Separator />
@@ -336,6 +361,7 @@ export function Component() {
           </Card>
 
           <StatusHistoryCard ticketId={ticket.id} />
+          <MoveBoardDialog ticket={movingBoard ? ticket : null} onOpenChange={setMovingBoard} />
 
           {isAdmin && !deleted && (
             <Button variant="outline" className="w-full" onClick={() => setCorrectionOpen(true)}>

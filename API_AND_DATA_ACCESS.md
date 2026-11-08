@@ -135,3 +135,13 @@ The client rule `canTransition()` in `@tms/shared` mirrors the database rule, fo
 | `generateSummary(ticketId)` | `{action:'summary', ticket_id}` | `{overview, completed_work[], technical_details[], current_status, pending_activities[], important_notes[]}` |
 | `generateEmail(ticketId, options)` | `{action:'email', ticket_id, options:{purpose, tone, technicality, length, instructions}}` | `{subject, body, used_context[]}` |
 Errors return `{error}` with 400/403/404/429/502/503/504 and are shown in the dialog's ErrorState.
+
+### Monthly boards and final statuses (Phase 11)
+| Function | Call | Notes |
+|---|---|---|
+| `listBoardTickets({ boardMonth, … })` | `tickets` where `board_month = X` (live, ≤ 1000) | One board per month; the old "30 latest Prod" cap is gone because each board is bounded by its month |
+| `listTickets({ boardMonth?, … })` | as before, plus an optional `board_month` filter | Table view (Board page → Table) and the Tickets page share `TicketList`: search, status/assignee/board filters, 25 per page |
+| `moveTicketBoard(id, month)` | `update tickets set board_month` | RLS allows only unlocked tickets; audited as `board_changed` |
+| `transitionTicketStatus(id, status, reason?)` | `rpc(transition_ticket_status)` | `reason` only for Dropped |
+| `createTicket({ …, board_month? })` | insert | The Board page passes the month being viewed |
+URL state: `/board?month=2026-12-01&view=table&q=…&status=…&page=2`.

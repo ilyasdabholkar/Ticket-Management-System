@@ -539,14 +539,18 @@ export type Database = {
       tickets: {
         Row: {
           application_id: string | null
+          board_month: string
           assigned_to: string | null
           category: Database["public"]["Enums"]["ticket_category"]
+          completed_on: string | null
           created_at: string
           created_by: string
           deleted_at: string | null
           deleted_by: string | null
           description: Json | null
           description_text: string | null
+          drop_reason: string | null
+          dropped_on: string | null
           id: string
           priority: Database["public"]["Enums"]["ticket_priority"]
           prod_deployed_on: string | null
@@ -559,14 +563,18 @@ export type Database = {
         }
         Insert: {
           application_id?: string | null
+          board_month?: string
           assigned_to?: string | null
           category: Database["public"]["Enums"]["ticket_category"]
+          completed_on?: string | null
           created_at?: string
           created_by?: string
           deleted_at?: string | null
           deleted_by?: string | null
           description?: Json | null
           description_text?: string | null
+          drop_reason?: string | null
+          dropped_on?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
           prod_deployed_on?: string | null
@@ -579,14 +587,18 @@ export type Database = {
         }
         Update: {
           application_id?: string | null
+          board_month?: string
           assigned_to?: string | null
           category?: Database["public"]["Enums"]["ticket_category"]
+          completed_on?: string | null
           created_at?: string
           created_by?: string
           deleted_at?: string | null
           deleted_by?: string | null
           description?: Json | null
           description_text?: string | null
+          drop_reason?: string | null
+          dropped_on?: string | null
           id?: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
           prod_deployed_on?: string | null
@@ -696,6 +708,7 @@ export type Database = {
       }
       transition_ticket_status: {
         Args: {
+          p_reason?: string
           p_status: Database["public"]["Enums"]["ticket_status"]
           p_ticket_id: string
         }
@@ -746,13 +759,21 @@ export type Database = {
         | "troubleshooting"
         | "general_notes"
       kb_document_type: "note" | "document"
-      ticket_category: "development" | "support" | "rnd"
+      ticket_category:
+        | "development"
+        | "support"
+        | "rnd"
+        | "analysis"
+        | "issue"
+        | "bug_fix"
       ticket_priority: "low" | "medium" | "high" | "critical"
       ticket_status:
         | "development"
         | "in_progress"
         | "qa_deployed"
         | "prod_deployed"
+        | "completed"
+        | "dropped"
       user_role: "admin" | "employee"
     }
     CompositeTypes: {
@@ -882,13 +903,22 @@ export const Constants = {
   public: {
     Enums: {
       effort_unit: ["minutes", "hours"],
-      ticket_category: ["development", "support", "rnd"],
+      ticket_category: [
+        "development",
+        "support",
+        "rnd",
+        "analysis",
+        "issue",
+        "bug_fix",
+      ],
       ticket_priority: ["low", "medium", "high", "critical"],
       ticket_status: [
         "development",
         "in_progress",
         "qa_deployed",
         "prod_deployed",
+        "completed",
+        "dropped",
       ],
       user_role: ["admin", "employee"],
     },

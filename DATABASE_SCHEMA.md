@@ -208,3 +208,30 @@ One row per category (`prefix`, `last_value`). `private.next_ticket_number()` in
   - Read: any active user can read profiles. Names are needed across the app.
   - Update: only your own row, and only while active.
 - `roles`, `is_active` and `email` change only through the service role, in the `admin-users` Edge Function.
+
+## Phase 11: Completed / Dropped and monthly boards (2026-11-08)
+Migrations `20261108070924_ticket_statuses_completed_dropped` (enum values only, so they are committed before use) and `20261108071052_monthly_boards_final_statuses`.
+
+| Change | Detail |
+|---|---|
+| `ticket_status` enum | + `completed`, `dropped` |
+| `tickets.board_month` | `date not null`, first day of a month (check), 2000–2100; backfilled from `created_at` (IST month). Insert defaults to the current IST month; any value is normalised to the 1st. Index `tickets_board_month_idx` (live rows). Granted SELECT/INSERT/UPDATE to `authenticated` |
+| `tickets.completed_on`, `dropped_on` | timestamptz, set by `transition_ticket_status` (SELECT only) |
+| `tickets.drop_reason` | optional text ≤ 500 chars, trimmed, blank → null (SELECT only) |
+| `private.is_final_status(status)` | `prod_deployed`, `completed` or `dropped`. Used by every lock check: guard trigger, `assert_ticket_writable`, `ticket_is_locked`, the tickets UPDATE policy, the attachment upload policy, `change_ticket_category`, `register/remove_ticket_attachment`, `soft_delete_ticket` |
+| `private.status_label(status)` | Human label for error messages ("Ticket X is locked (Completed)") |
+| `public.transition_ticket_status(id, status, reason default null)` | Replaces the 2-argument version. Rules: open statuses move freely; Prod only from QA; Completed from In Progress or QA; Dropped from any open status; final statuses are locked. `reason` is allowed only for Dropped and is stored in `drop_reason` and in the `status_changed` activity metadata |
+| `private.tickets_board_audit` trigger | Logs `board_changed` {from, to} on `board_month` updates (skipped inside admin corrections, which log their own diff) |
+| `public.admin_correct_ticket` | Also corrects `completed_on`, `dropped_on`, `drop_reason`, `board_month`; can reopen a Completed/Dropped ticket |
+| `public.get_dashboard_stats` | `by_status` also returns `completed` and `dropped` |
+
+## New categories (2026-11-08)
+Migrations `20261108074711_ticket_categories_analysis_issue_bugfix` (enum values only) and `20261108074724_ticket_categories_sequences_dashboard`.
+
+| Category | Enum value | Prefix | Application |
+|---|---|---|---|
+| Analysis | `analysis` | ANL | Required |
+| Issue | `issue` | ISS | Required |
+| Bug Fix | `bug_fix` | BUG | Required |
+
+Each has a `private.ticket_sequences` row. The existing check `tickets_application_required` (only `rnd` is exempt) and `change_ticket_category` already enforce the application rule, so neither needed changing. `get_dashboard_stats` returns `analysis`, `issue` and `bug_fix` counts.
