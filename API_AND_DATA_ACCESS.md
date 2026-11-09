@@ -145,3 +145,10 @@ Errors return `{error}` with 400/403/404/429/502/503/504 and are shown in the di
 | `transitionTicketStatus(id, status, reason?)` | `rpc(transition_ticket_status)` | `reason` only for Dropped |
 | `createTicket({ …, board_month? })` | insert | The Board page passes the month being viewed |
 URL state: `/board?month=2026-12-01&view=table&q=…&status=…&page=2`.
+
+### Attachments page (`features/attachments`, route `/attachments`)
+| Function | Call | Notes |
+|---|---|---|
+| `listAttachments({ search, type, uploader, page })` | `ticket_attachments` + inner `tickets` (live only) + uploader profile, 25 per page, newest first | Removed files (`deleted_at`) and files on deleted tickets are excluded explicitly (admins could otherwise see them via RLS). Type groups: Images, PDF, Word/Excel, Text/SQL/JSON, ZIP |
+| `attachmentLink(row, download)` | `storage.createSignedUrl` (5 min) | Same storage policy as the ticket page; `download` sets the original file name |
+The query key is nested under `tickets`, so uploads and removals on a ticket refresh the list.

@@ -32,6 +32,7 @@ export const router = createBrowserRouter(
               path: 'applications/:applicationId/:tab?',
               lazy: () => import('@/features/applications/pages/ApplicationDetailPage'),
             },
+            { path: 'attachments', lazy: () => import('@/features/attachments/pages/AttachmentsPage') },
             { path: 'knowledge-base', lazy: () => import('@/features/knowledge-base/pages/KnowledgeBasePage') },
             { path: 'knowledge-base/:id', lazy: () => import('@/features/knowledge-base/pages/KnowledgeBaseDetailPage') },
             { path: 'effort', lazy: () => import('@/features/effort-logs/pages/EffortPage') },

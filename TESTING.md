@@ -139,3 +139,4 @@ Each phase is verified with:
 |---|---|
 | `12_new_categories.sql` (9): each new category is rejected without an application, numbered ANL/ISS/BUG; R&D still needs no application; changing R&D to Issue renumbers it; dashboard counts | 9/9 (rolled back, so no numbers were used) |
 | Browser | Create-ticket category list shows all six with prefixes; table Category filter lists them; dashboard "By category" row with 6 tiles | Pass |
+| Attachments page + board card click (2026-11-09) | Browser: 2 real PDFs on ANL-0001 listed with size, ticket, status and uploader; PDF filter; search "health" leaves 1; Open opens a signed URL in a new tab; Download saves under the original file name; clicking a board card opens DEV-0001 | Pass |

@@ -1,8 +1,8 @@
 import { useDraggable } from '@dnd-kit/core'
 import { TICKET_CATEGORY_META, formatEffort, isFinalStatus } from '@tms/shared'
 import { Clock, Lock } from 'lucide-react'
-import { forwardRef, type HTMLAttributes } from 'react'
-import { Link } from 'react-router'
+import { forwardRef, type HTMLAttributes, type MouseEvent } from 'react'
+import { Link, useNavigate } from 'react-router'
 import { PriorityBadge } from '@/components/shared/ticket-badges'
 import { UserAvatar } from '@/components/shared/user-avatar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -28,7 +28,7 @@ export const TicketCardBody = forwardRef<HTMLDivElement, CardBodyProps>(function
       ref={ref}
       className={cn(
         'bg-card group rounded-lg border p-3 text-left shadow-xs transition-shadow',
-        !locked && 'cursor-grab active:cursor-grabbing hover:shadow-md',
+        'hover:shadow-md', !locked && 'active:cursor-grabbing',
         dragging && 'opacity-40',
         overlay && 'rotate-1 shadow-lg ring-primary/30 ring-2',
         className,
@@ -85,18 +85,29 @@ export const TicketCardBody = forwardRef<HTMLDivElement, CardBodyProps>(function
 })
 
 export function DraggableTicketCard({ ticket, effortMinutes }: { ticket: TicketListItem; effortMinutes?: number }) {
+  const navigate = useNavigate()
   const locked = isFinalStatus(ticket.status)
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: ticket.id,
     data: { ticket },
     disabled: locked,
   })
+  // A click opens the ticket. Dragging only starts after the pointer moves 6px (PointerSensor
+  // activation distance), so a drag never triggers this; links inside the card handle themselves.
+  const open = (e: MouseEvent) => {
+    if ((e.target as HTMLElement).closest('a')) return
+    if (e.ctrlKey || e.metaKey) window.open(`${import.meta.env.BASE_URL.replace(/\/$/, '')}/tickets/${ticket.ticket_number}`, '_blank')
+    else navigate(`/tickets/${ticket.ticket_number}`)
+  }
   return (
     <TicketCardBody
       ref={setNodeRef}
       ticket={ticket}
       effortMinutes={effortMinutes}
       dragging={isDragging}
+      className="cursor-pointer"
+      onClick={open}
+      title={locked ? 'Click to open' : 'Click to open · drag to change status'}
       aria-label={`${ticket.ticket_number}: ${ticket.title}`}
       {...attributes}
       {...listeners}
