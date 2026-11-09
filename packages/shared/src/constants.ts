@@ -123,6 +123,18 @@ export function formatBytes(bytes: number): string {
  * free movement among the open statuses; Prod Deployed only from QA Deployed; Completed from In Progress or
  * QA Deployed; Dropped from any open status. Final statuses (Prod Deployed, Completed, Dropped) are locked.
  */
+/**
+ * Who may change a ticket's status (mirrors private.can_change_status): an admin, the ticket's creator or its assignee.
+ * The database enforces this; the UI uses it to disable dragging and the status menu.
+ */
+export function canChangeTicketStatus(
+  ticket: { created_by: string; assigned_to: string | null },
+  user: { id: string; isAdmin: boolean } | null | undefined,
+): boolean {
+  if (!user) return false
+  return user.isAdmin || ticket.created_by === user.id || ticket.assigned_to === user.id
+}
+
 export function canTransition(from: TicketStatus, to: TicketStatus): boolean {
   if (from === to) return false
   if (isFinalStatus(from)) return false

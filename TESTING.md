@@ -140,3 +140,9 @@ Each phase is verified with:
 | `12_new_categories.sql` (9): each new category is rejected without an application, numbered ANL/ISS/BUG; R&D still needs no application; changing R&D to Issue renumbers it; dashboard counts | 9/9 (rolled back, so no numbers were used) |
 | Browser | Create-ticket category list shows all six with prefixes; table Category filter lists them; dashboard "By category" row with 6 tiles | Pass |
 | Attachments page + board card click (2026-11-09) | Browser: 2 real PDFs on ANL-0001 listed with size, ticket, status and uploader; PDF filter; search "health" leaves 1; Open opens a signed URL in a new tab; Download saves under the original file name; clicking a board card opens DEV-0001 | Pass |
+
+## Status-change permission (2026-11-09)
+| Check | Result |
+|---|---|
+| `13_status_change_permissions.sql` (8): another employee blocked (also on an unassigned ticket: regression for the NULL bug); other employee can still edit details; creator, including their own unassigned ticket; assignee; admin; former assignee blocked after unassign | 8/8 |
+| Browser as an employee-only user | DEV-0001 card is "Read-only" (not draggable, with explanatory tooltip), and dragging leaves the columns unchanged; locked tickets unchanged; ticket page shows "Creator, assignee or admin only" with no status menu; a direct REST call to `transition_ticket_status` with the employee session returns 403 and the status is unchanged | Pass |

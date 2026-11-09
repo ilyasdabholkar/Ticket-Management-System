@@ -1,11 +1,12 @@
 import { useDraggable } from '@dnd-kit/core'
-import { TICKET_CATEGORY_META, formatEffort, isFinalStatus } from '@tms/shared'
+import { TICKET_CATEGORY_META, canChangeTicketStatus, formatEffort, isFinalStatus } from '@tms/shared'
 import { Clock, Lock } from 'lucide-react'
 import { forwardRef, type HTMLAttributes, type MouseEvent } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { PriorityBadge } from '@/components/shared/ticket-badges'
 import { UserAvatar } from '@/components/shared/user-avatar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useAuth } from '@/features/auth/auth-context'
 import type { TicketListItem } from '@/features/tickets/api'
 import { timeAgo } from '@/lib/dates'
 import { cn } from '@/lib/utils'
@@ -28,7 +29,7 @@ export const TicketCardBody = forwardRef<HTMLDivElement, CardBodyProps>(function
       ref={ref}
       className={cn(
         'bg-card group rounded-lg border p-3 text-left shadow-xs transition-shadow',
-        'hover:shadow-md', !locked && 'active:cursor-grabbing',
+        'hover:shadow-md',
         dragging && 'opacity-40',
         overlay && 'rotate-1 shadow-lg ring-primary/30 ring-2',
         className,
@@ -86,11 +87,15 @@ export const TicketCardBody = forwardRef<HTMLDivElement, CardBodyProps>(function
 
 export function DraggableTicketCard({ ticket, effortMinutes }: { ticket: TicketListItem; effortMinutes?: number }) {
   const navigate = useNavigate()
+  const { profile, isAdmin } = useAuth()
   const locked = isFinalStatus(ticket.status)
+  // Only an admin, the creator or the assignee may move it (also enforced by transition_ticket_status).
+  const allowed = canChangeTicketStatus(ticket, profile ? { id: profile.id, isAdmin } : null)
+  const draggable = !locked && allowed
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: ticket.id,
     data: { ticket },
-    disabled: locked,
+    disabled: !draggable,
   })
   // A click opens the ticket. Dragging only starts after the pointer moves 6px (PointerSensor
   // activation distance), so a drag never triggers this; links inside the card handle themselves.
@@ -107,11 +112,17 @@ export function DraggableTicketCard({ ticket, effortMinutes }: { ticket: TicketL
       dragging={isDragging}
       className="cursor-pointer"
       onClick={open}
-      title={locked ? 'Click to open' : 'Click to open · drag to change status'}
+      title={
+        locked
+          ? 'Click to open'
+          : allowed
+            ? 'Click to open · drag to change status'
+            : 'Click to open · only the creator, the assignee or an admin can change its status'
+      }
       aria-label={`${ticket.ticket_number}: ${ticket.title}`}
       {...attributes}
       {...listeners}
-      aria-roledescription={locked ? 'Locked ticket' : 'Draggable ticket'}
+      aria-roledescription={locked ? 'Locked ticket' : draggable ? 'Draggable ticket' : 'Read-only ticket'}
     />
   )
 }

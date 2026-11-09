@@ -1,4 +1,4 @@
-import { TICKET_STATUSES, TICKET_STATUS_LABELS, canTransition, isFinalStatus, type TicketStatus } from '@tms/shared'
+import { TICKET_STATUSES, TICKET_STATUS_LABELS, canChangeTicketStatus, canTransition, isFinalStatus, type TicketStatus } from '@tms/shared'
 import { ChevronDown, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 import { StatusBadge } from '@/components/shared/ticket-badges'
@@ -11,12 +11,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useAuth } from '@/features/auth/auth-context'
 import type { Ticket } from '../api'
 import { useTransitionStatus } from '../hooks'
 import { FinishTicketDialog, type FinalStatus } from './finish-ticket-dialog'
 
 /** Status dropdown that only offers allowed transitions; final statuses ask for confirmation (Dropped: optional reason). */
 export function StatusControl({ ticket, disabled }: { ticket: Ticket; disabled?: boolean }) {
+  const { profile, isAdmin } = useAuth()
+  const allowed = canChangeTicketStatus(ticket, profile ? { id: profile.id, isAdmin } : null)
   const transition = useTransitionStatus()
   const [finishing, setFinishing] = useState<FinalStatus | null>(null)
   const options = TICKET_STATUSES.filter((s) => canTransition(ticket.status, s))
@@ -26,6 +29,14 @@ export function StatusControl({ ticket, disabled }: { ticket: Ticket; disabled?:
   const go = (to: TicketStatus, reason?: string) =>
     transition.mutate({ id: ticket.id, status: to, ticketNumber: ticket.ticket_number, reason })
 
+  if (!disabled && !allowed && !isFinalStatus(ticket.status)) {
+    return (
+      <span className="inline-flex items-center gap-1.5" title="Only the creator, the assignee or an admin can change the status">
+        <StatusBadge status={ticket.status} />
+        <span className="text-muted-foreground text-xs">Creator, assignee or admin only</span>
+      </span>
+    )
+  }
   if (disabled || options.length === 0) return <StatusBadge status={ticket.status} />
 
   return (

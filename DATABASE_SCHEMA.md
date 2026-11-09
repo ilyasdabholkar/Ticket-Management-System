@@ -235,3 +235,10 @@ Migrations `20261108074711_ticket_categories_analysis_issue_bugfix` (enum values
 | Bug Fix | `bug_fix` | BUG | Required |
 
 Each has a `private.ticket_sequences` row. The existing check `tickets_application_required` (only `rnd` is exempt) and `change_ticket_category` already enforce the application rule, so neither needed changing. `get_dashboard_stats` returns `analysis`, `issue` and `bug_fix` counts.
+
+## Status-change permission (2026-11-09)
+Migrations `20261109131130_status_change_owner_or_admin` and `20261109131227_status_change_null_safe`.
+
+- `private.can_change_status(ticket)`: true for an admin, the creator or the assignee. Every comparison is wrapped in `coalesce(…, false)`, because `assigned_to = auth.uid()` is NULL for unassigned tickets and `if not NULL` would not raise (this was a real bug in the first version, fixed by the second migration).
+- `public.transition_ticket_status` raises 42501 "Only the creator, the assignee or an administrator can change the status of …" before any other rule.
+- Unchanged: editing details (any active user, unlocked tickets), board moves, admin correction.
